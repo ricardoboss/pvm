@@ -19,6 +19,10 @@ internal sealed class InstallCommand(ICachingVersionDownloadsProvider downloadsP
         [Description("Don't use the cache.")]
         [CommandOption("-n|--no-cache")]
         public bool NoCache { get; init; }
+
+        [Description("Force installation even if the version is already installed.")]
+        [CommandOption("-f|--force")]
+        public bool Force { get; init; }
     }
     
     private VersionDownloadData? downloadData;
@@ -37,7 +41,7 @@ internal sealed class InstallCommand(ICachingVersionDownloadsProvider downloadsP
         }
 
         var versionsDirectory = Path.Combine(environment.VersionsInstallDirectory, downloadData.Version.ToString());
-        if (Directory.Exists(versionsDirectory))
+        if (Directory.Exists(versionsDirectory) && !settings.Force)
         {
             AnsiConsole.MarkupLine($"[red]Version {downloadData.Version} is already installed.[/]");
 
@@ -54,11 +58,18 @@ internal sealed class InstallCommand(ICachingVersionDownloadsProvider downloadsP
             {
                 var downloadTask = ctx.AddTask("[green]Downloading zip archive[/]");
 
-                var zipPath = await DownloadAsync(downloadTask, downloadData);
+                var zipPath = await DownloadAsync(downloadTask, downloadData, settings.Force);
 
                 var extractTask = ctx.AddTask("[green]Extracting zip archive[/]");
 
-                await ExtractAsync(extractTask, zipPath);
+                await ExtractAsync(extractTask, zipPath, settings.Force);
+
+                var cleanupTask = ctx.AddTask("[green]Cleaning up[/]").MaxValue(1).IsIndeterminate();
+
+                File.Delete(zipPath);
+
+                cleanupTask.Increment(1);
+                cleanupTask.StopTask();
             });
 
         AnsiConsole.MarkupLine($"[green]Version {downloadData.Version} installed![/]");
@@ -69,9 +80,22 @@ internal sealed class InstallCommand(ICachingVersionDownloadsProvider downloadsP
         return 0;
     }
 
-    private async Task<string> DownloadAsync(ProgressTask task, VersionDownloadData data)
+    private async Task<string> DownloadAsync(ProgressTask task, VersionDownloadData data, bool force)
     {
         var zipPath = Path.Combine(environment.VersionsDownloadDirectory, $"{data.Version}.zip");
+        if (File.Exists(zipPath))
+        {
+            if (!force)
+            {
+                task.Description("[green]Zip archive already downloaded[/]")
+                    .StopTask();
+
+                return zipPath;
+            }
+
+            File.Delete(zipPath);
+        }
+        
         var downloadUrl = data.ZipUrl;
 
         await versionDownloader.DownloadAsync(
@@ -86,13 +110,25 @@ internal sealed class InstallCommand(ICachingVersionDownloadsProvider downloadsP
         return zipPath;
     }
 
-    private async Task ExtractAsync(ProgressTask task, string zipPath)
+    private async Task ExtractAsync(ProgressTask task, string zipPath, bool force)
     {
-        var versionsDirectory = Path.Combine(environment.VersionsInstallDirectory, downloadData!.Version.ToString());
+        var versionDirectory = Path.Combine(environment.VersionsInstallDirectory, downloadData!.Version.ToString());
+        if (Directory.Exists(versionDirectory))
+        {
+            if (!force)
+            {
+                task.Description("[green]Version already installed[/]")
+                    .StopTask();
+
+                return;
+            }
+
+            Directory.Delete(versionDirectory, true);
+        }
 
         await zipExtractor.ExtractAsync(
             zipPath,
-            versionsDirectory,
+            versionDirectory,
             max => task.MaxValue(max),
             increment => task.Increment(increment)
         );

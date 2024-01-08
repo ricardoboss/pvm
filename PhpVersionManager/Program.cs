@@ -47,6 +47,10 @@ void ConfigureServices(IServiceCollection s)
     });
 
     s.AddSingleton<IZipExtractor, ZipExtractor>();
+
+    s.AddSingleton<ILinkManager, JunctionLinkManager>();
+
+    s.AddSingleton<ILocalVersionsProvider, LocalVersionsProvider>();
 }
 
 void ConfigureCommands(IConfigurator c)
@@ -56,4 +60,7 @@ void ConfigureCommands(IConfigurator c)
 
     c.AddCommand<SearchCommand>("search");
     c.AddCommand<InstallCommand>("install");
+    c.AddCommand<UninstallCommand>("uninstall");
+    c.AddCommand<UseCommand>("use");
+    c.AddCommand<ListCommand>("list");
 }

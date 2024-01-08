@@ -12,8 +12,8 @@ internal sealed class SearchCommand(ICachingVersionDownloadsProvider downloadsPr
     public sealed class Settings : CommandSettings
     {
         [Description("The version to search for.")]
-        [CommandArgument(0, "<version>")]
-        public string Version { get; init; } = null!;
+        [CommandArgument(0, "[version]")]
+        public string? Version { get; init; }
 
         [Description("Don't use the cache.")]
         [CommandOption("-n|--no-cache")]
@@ -44,7 +44,7 @@ internal sealed class SearchCommand(ICachingVersionDownloadsProvider downloadsPr
         return 0;
     }
 
-    private async Task SearchAsync(string query)
+    private async Task SearchAsync(string? query)
     {
         var data = downloadsProvider.GetVersionsAsync();
 
@@ -52,7 +52,7 @@ internal sealed class SearchCommand(ICachingVersionDownloadsProvider downloadsPr
 
         await foreach (var datum in data)
         {
-            if (!datum.Version.ToString().Contains(query, StringComparison.OrdinalIgnoreCase))
+            if (query is not null && !datum.Version.ToString().Contains(query, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             AnsiConsole.MarkupLine($"- [green]{datum.Version}[/]");

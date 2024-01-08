@@ -1,11 +1,13 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using PhpVersionManager.ServiceInterfaces;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace PhpVersionManager.Commands;
 
-internal sealed class UninstallCommand(ILocalVersionsProvider localVersionsProvider, ILinkManager linkManager, IPvmEnvironment environment) : AsyncCommand<UninstallCommand.Settings>
+[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+internal sealed class UninstallCommand(ILocalVersionsProvider localVersionsProvider, ILinkManager linkManager, IPvmEnvironment environment, IUserPathManager pathManager) : AsyncCommand<UninstallCommand.Settings>
 {
     public sealed class Settings : CommandSettings
     {
@@ -33,18 +35,30 @@ internal sealed class UninstallCommand(ILocalVersionsProvider localVersionsProvi
             if (!settings.Force)
             {
                 AnsiConsole.MarkupLine($"[red]Version {localData.Version} is currently in use.[/]");
-                AnsiConsole.MarkupLine("[yellow]Either switch to another version or use the --force option.[/]");
+                AnsiConsole.MarkupLine("[red]Either switch to another version or use the --force option.[/]");
                 return 1;
             }
 
-            AnsiConsole.MarkupLine($"[yellow]Unlinking {localData.Version}...[/]");
+            var currentVersionDestination = environment.CurrentVersionDestination;
+            await linkManager.UnlinkAsync(currentVersionDestination);
 
-            await linkManager.UnlinkAsync(environment.CurrentVersionDestination);
+            if (await pathManager.Contains(currentVersionDestination))
+            {
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine($"[yellow]Warning:[/] {currentVersionDestination} is in your PATH.");
+
+                if (AnsiConsole.Confirm("Do you want to remove it from your PATH?"))
+                {
+                    await pathManager.Remove(currentVersionDestination);
+
+                    AnsiConsole.MarkupLine($"[green]{currentVersionDestination} removed from PATH.[/]");
+                }
+            }
         }
 
-        AnsiConsole.MarkupLine($"[green]Uninstalling version {localData.Version}...[/]");
-
         Directory.Delete(localData.Directory.FullName, true);
+
+        AnsiConsole.MarkupLine($"[green]Uninstalled version {localData.Version}.[/]");
 
         return 0;
     }

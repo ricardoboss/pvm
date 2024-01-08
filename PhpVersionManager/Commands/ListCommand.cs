@@ -1,10 +1,12 @@
-﻿using PhpVersionManager.ServiceInterfaces;
+﻿using System.Diagnostics.CodeAnalysis;
+using PhpVersionManager.ServiceInterfaces;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
 
 namespace PhpVersionManager.Commands;
 
+[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 internal sealed class ListCommand(ILocalVersionsProvider versionsProvider) : AsyncCommand<ListCommand.Settings>
 {
     public sealed class Settings : CommandSettings

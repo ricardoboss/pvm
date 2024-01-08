@@ -51,6 +51,8 @@ void ConfigureServices(IServiceCollection s)
     s.AddSingleton<ILinkManager, JunctionLinkManager>();
 
     s.AddSingleton<ILocalVersionsProvider, LocalVersionsProvider>();
+
+    s.AddSingleton<IUserPathManager, EnvironmentUserPathManager>();
 }
 
 void ConfigureCommands(IConfigurator c)

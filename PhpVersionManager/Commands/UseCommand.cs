@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using PhpVersionManager.Models;
 using PhpVersionManager.ServiceInterfaces;
 using Spectre.Console;
@@ -6,7 +7,8 @@ using Spectre.Console.Cli;
 
 namespace PhpVersionManager.Commands;
 
-internal sealed class UseCommand(ILocalVersionsProvider localVersions, ILinkManager linkManager, IPvmEnvironment environment) : AsyncCommand<UseCommand.Settings>
+[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+internal sealed class UseCommand(ILocalVersionsProvider localVersions, ILinkManager linkManager, IPvmEnvironment environment, IUserPathManager pathManager) : AsyncCommand<UseCommand.Settings>
 {
     public sealed class Settings : CommandSettings
     {
@@ -25,12 +27,26 @@ internal sealed class UseCommand(ILocalVersionsProvider localVersions, ILinkMana
         }
 
         var currentVersion = await localVersions.GetCurrentVersionAsync();
+        var currentVersionDestination = environment.CurrentVersionDestination;
         if (currentVersion is not null)
-            await linkManager.UnlinkAsync(environment.CurrentVersionDestination);
+            await linkManager.UnlinkAsync(currentVersionDestination);
 
-        await linkManager.LinkAsync(localData.Directory.FullName, environment.CurrentVersionDestination);
+        await linkManager.LinkAsync(localData.Directory.FullName, currentVersionDestination);
 
         AnsiConsole.MarkupLine($"[green]Version {localData.Version} is now in use.[/]");
+
+        if (await pathManager.Contains(currentVersionDestination))
+            return 0;
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine($"[yellow]Warning:[/] {currentVersionDestination} is not in your PATH.");
+
+        if (!AnsiConsole.Confirm("Do you want to add it to your PATH?"))
+            return 0;
+
+        await pathManager.Add(currentVersionDestination);
+
+        AnsiConsole.MarkupLine($"[green]{currentVersionDestination} added to PATH.[/]");
 
         return 0;
     }

@@ -32,14 +32,24 @@ void ConfigureServices(IServiceCollection s)
 
     s.AddSingleton<IPvmEnvironment, ConfiguredPvmEnvironment>();
 
-    s.AddSingleton<IVersionDownloadsProvider, StaticVersionDownloadsProvider>();
-    // s.AddSingleton<IVersionDownloadsProvider, OnlineVersionDownloadsProvider>();
+    // s.AddSingleton<IVersionDownloadsProvider, StaticVersionDownloadsProvider>();
+    s.AddSingleton<IVersionDownloadsProvider, OnlineVersionDownloadsProvider>();
     s.AddSingleton<ICachingVersionDownloadsProvider, CachingVersionDownloadsProvider>();
 
     s.AddHttpClient<IVersionDownloader, HttpVersionDownloader>().ConfigureHttpClient(c =>
     {
         c.DefaultRequestHeaders.Accept.Add(new("application/zip", 1.0));
         c.DefaultRequestHeaders.Accept.Add(new("application/octet-stream", 0.9));
+        c.DefaultRequestHeaders.Accept.Add(new("*/*", 0.8));
+
+        c.DefaultRequestHeaders.UserAgent.Add(new(appName, appVersion));
+        c.DefaultRequestHeaders.UserAgent.Add(new("(github.com/ricardoboss/pvm)"));
+    });
+
+    s.AddHttpClient<IHtmlDownloader, HttpHtmlDownloader>().ConfigureHttpClient(c =>
+    {
+        c.DefaultRequestHeaders.Accept.Add(new("text/html", 1.0));
+        c.DefaultRequestHeaders.Accept.Add(new("application/xhtml+xml", 0.9));
         c.DefaultRequestHeaders.Accept.Add(new("*/*", 0.8));
 
         c.DefaultRequestHeaders.UserAgent.Add(new(appName, appVersion));

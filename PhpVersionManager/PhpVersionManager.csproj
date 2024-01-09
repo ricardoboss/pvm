@@ -9,6 +9,7 @@
         <LangVersion>default</LangVersion>
         <StripSymbols>false</StripSymbols>
         <PublishSingleFile>true</PublishSingleFile>
+        <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     </PropertyGroup>
 
     <ItemGroup>

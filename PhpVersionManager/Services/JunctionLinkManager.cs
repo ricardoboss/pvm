@@ -20,8 +20,10 @@ public class JunctionLinkManager : ILinkManager
         await process!.WaitForExitAsync();
     }
 
-    public async Task UnlinkAsync(string linkName)
+    public Task UnlinkAsync(string linkName)
     {
         Directory.Delete(linkName);
+
+        return Task.CompletedTask;
     }
 }

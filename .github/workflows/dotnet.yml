@@ -30,7 +30,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r ${{ matrix.os }}-${{ matrix.arch }}
     - name: Build
-      run: dotnet build PhpVersionManager/PhpVersionManager.csproj -r ${{ matrix.os }}-${{ matrix.arch }} --no-restore --c Release
+      run: dotnet build PhpVersionManager/PhpVersionManager.csproj -r ${{ matrix.os }}-${{ matrix.arch }} --no-restore -c Release
     - name: Publish
       run: dotnet publish PhpVersionManager/PhpVersionManager.csproj -r ${{ matrix.os }}-${{ matrix.arch }} --no-build -o publish
     - name: Upload a Build Artifact

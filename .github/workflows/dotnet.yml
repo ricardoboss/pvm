@@ -32,7 +32,7 @@ jobs:
     - name: Build
       run: dotnet build PhpVersionManager/PhpVersionManager.csproj -r ${{ matrix.os }}-${{ matrix.arch }} --no-restore -c Release
     - name: Publish
-      run: dotnet publish PhpVersionManager/PhpVersionManager.csproj -r ${{ matrix.os }}-${{ matrix.arch }} --no-build -o publish
+      run: dotnet publish PhpVersionManager/PhpVersionManager.csproj -r ${{ matrix.os }}-${{ matrix.arch }} --no-build -o publish /p:CopyLocalLockFileAssemblies=false
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.0.0
       with:
